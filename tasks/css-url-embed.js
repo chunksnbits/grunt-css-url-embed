@@ -10,7 +10,7 @@
 
 module.exports = function(grunt) {
   var URL_REGEX = /(?:url\(["']?)(.*?)(?:["']?\))/;
-  
+
   var fs = require('fs');
   var path = require('path');
   var mime = require('mime');
@@ -39,7 +39,28 @@ module.exports = function(grunt) {
     });
   });
 
+
+  // Filters an array of unique urls.
+  // arguments:
+  //    urls: a list of unique file urls
+  //    filter: a callback method
+  //            OR: an array of fileformats to be included
+  //                in the base64 encoding, e.g.: ['jpg','png']
+  function filter(urls, filter) {
+    // If filter is a function call callback for every
+    // element of the urls-array
+    if (filter && ({}).toString.call(filter) === '[object Function]') {
+      return urls.filter(filter);
+    }
+    // else filter filetypes provided
+    var regex = new RegExp('(' + filter.join('|') + ')$');
+    return urls.filter(function(url) {
+      return regex.test(url);
+    });
+  }
+
   function embedUrls(f, options) {
+
     try {
       var source = grunt.file.read(f);
       var baseDir = path.resolve(options.baseDir ? options.baseDir : path.dirname(f));
@@ -47,8 +68,9 @@ module.exports = function(grunt) {
       var targetUrls = allUrls.filter(function(url) { return !url.match('(data:|http[s]*:)'); });
       var uniqTargetUrls = grunt.util._.uniq(targetUrls);
       var extractedUrls = uniqTargetUrls.map(function(url) { return url.match(URL_REGEX)[1]; });
+      var filteredUrls = options.filter ? filter(extractedUrls, options.filter) : uniqTargetUrls;
 
-      if (targetUrls.length === 0) {
+      if (filteredUrls.length === 0) {
         grunt.log.writeln("Nothing to embed here!");
         return source;
       }
@@ -57,23 +79,23 @@ module.exports = function(grunt) {
         grunt.log.writeln('Using "' + baseDir + '" as base directory for URL\'s');
       }
 
-      grunt.log.writeln(uniqTargetUrls.length + " embeddable URL" + (uniqTargetUrls.length > 1 ? "'s" : "") + " found");
+      grunt.log.writeln(filteredUrls.length + " embeddable URL" + (filteredUrls.length > 1 ? "'s" : "") + " found");
 
-      extractedUrls.forEach(function(rawUrl, i) {
-       	if (grunt.option('verbose')) {
+      filteredUrls.forEach(function(rawUrl, i) {
+        if (grunt.option('verbose')) {
           grunt.log.writeln('\n[ #' + (i + 1) + ' ]');
         }
-      
-      	var url = rawUrl;
-      
-      	if (rawUrl.indexOf('?') >= 0) {
-      		url = rawUrl.split('?')[0];
-      		
-        	if (grunt.option('verbose')) {
-          	grunt.log.writeln('"' + rawUrl + '" trimmed to "' + url + '"');
-        	}
-      	}
-      
+
+        var url = rawUrl;
+
+        if (rawUrl.indexOf('?') >= 0) {
+          url = rawUrl.split('?')[0];
+
+          if (grunt.option('verbose')) {
+            grunt.log.writeln('"' + rawUrl + '" trimmed to "' + url + '"');
+          }
+        }
+
         var urlFullPath = path.resolve(baseDir + '/' + url);
 
         if (grunt.option('verbose')) {
@@ -89,9 +111,9 @@ module.exports = function(grunt) {
         var mimeType = mime.lookup(urlFullPath);
         var dataUri = 'data:' + mimeType + ';base64,' + base64Content;
         var escapedRawUrl = rawUrl.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
-        
+
         source = source.replace(new RegExp(escapedRawUrl, 'g'), dataUri);
-        
+
         grunt.log.ok('"' + rawUrl + '" embedded');
       });
 
