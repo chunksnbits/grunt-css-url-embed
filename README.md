@@ -41,7 +41,7 @@ The base directory for URL's. Can be absolute or relative to the directory of yo
 
 #### filter
 
-Type: 'Array[String]' or Function
+Type: `Array[String]` or `Function(url)`
 
 Default: null
 
@@ -102,13 +102,13 @@ cssUrlEmbed: {
 }
 ```
 
-#### Exclude images from a certain domain
+#### Exclude images from a certain folder
 ```js
 cssUrlEmbed: {
   encodeWithBaseDir: {
     options: {
       filter: function(url) {
-        return url.indexOf('http://forbidden.domain') === -1;
+        return url.indexOf('forbiddenFolder/') === -1;
       }
     },
     files: {
