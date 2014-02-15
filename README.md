@@ -39,6 +39,16 @@ Default: `.` or the directory of `Gruntfile.js`
 
 The base directory for URL's. Can be absolute or relative to the directory of your `Gruntfile.js`.
 
+#### filter
+
+Type: 'Array[String]' or Function
+
+Default: null
+
+Allows to filter the URLs to be processed. 
+If given an Array all URLs that match the filetypes will be BASE64 encoded. 
+If given a Function the function will be applied to every URL found, expecting a boolean return value of true if the the url should be encoded or false if not.
+
 ### Usage Examples
 
 #### Map input and output files directly
@@ -78,10 +88,38 @@ cssUrlEmbed: {
   }
 }
 ```
+#### Process only png and jpg images
+```js
+cssUrlEmbed: {
+  encodeWithBaseDir: {
+    options: {
+      filter: ['png','jpg']
+    },
+    files: {
+      'path/to/output.css': ['path/to/input.css']
+    }
+  }
+}
+```
 
+#### Exclude images from a certain domain
+```js
+cssUrlEmbed: {
+  encodeWithBaseDir: {
+    options: {
+      filter: function(url) {
+        return url.indexOf('http://forbidden.domain') === -1;
+      }
+    },
+    files: {
+      'path/to/output.css': ['path/to/input.css']
+    }
+  }
+}
+```
 
 ## Release History
-
+ 
  * 2014-01-29&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v0.1.3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fixed handling of URL's with parameters. Improved logging.
  * 2013-10-02&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v0.1.2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Changed logging a bit.
  * 2013-09-17&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v0.1.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Removed dependency on [datauri](https://github.com/heldr/datauri). Now pretty much all MIME types are supported.
